@@ -10,6 +10,8 @@ An open, structured taxonomy of **what children learn** across the primary/eleme
 
 Every dot is a micro-topic, colored by subject; height is age; each thread is a prerequisite ([full-quality video](media/curriculum-viz.mp4)). Explore it interactively at [withmarble.com/curriculum](https://withmarble.com/curriculum) — tap any concept to trace everything a learner must master before it.
 
+Prefer to run it yourself? A bundled, offline-capable node-graph viewer of the same data lives in [`viewer/`](viewer/) — see [Node graph viewer](#node-graph-viewer).
+
 
 ## What this is
 
@@ -100,18 +102,43 @@ Validate structure + referential integrity:
 node scripts/validate.mjs
 ```
 
+Or via npm:
+
+```bash
+npm run validate            # structural + referential-integrity check
+npm run build:graph-data    # bundle data/*.json -> viewer/data.js
+npm run serve:viewer        # serve the viewer at http://localhost:8123/
+```
+
 ## Node graph viewer
 
-An interactive prerequisite graph over all 1,590 topics lives in [`viewer/`](viewer/) — a self-contained static page (vanilla JS + Canvas, zero runtime dependencies, works from `file://` too):
+An interactive prerequisite graph over all 1,590 topics lives in [`viewer/`](viewer/) — a self-contained static page (vanilla JS + Canvas 2D, zero runtime dependencies, also works when opened directly via `file://`):
 
 ```bash
 node scripts/build-graph-data.mjs   # bundle data/*.json -> viewer/data.js
 node scripts/serve-viewer.mjs       # serve at http://localhost:8123/
 ```
 
-Then open <http://localhost:8123/>. Nodes are topics (colored by subject, sized by centrality); edges are dependencies (solid = `hard`, dashed = `soft`). Search, filter by subject/type, click any node for its description, mastery evidence, assessment prompt, prerequisites / unlocks, aligned standards and cluster summary. Double-click to focus, drag nodes to pin them, and toggle age layering to view the graph the way height encodes age.
+Then open <http://localhost:8123/>.
 
-> `viewer/data.js` is generated — edit `scripts/build-graph-data.mjs` instead.
+| File | What it holds |
+|---|---|
+| [`viewer/index.html`](viewer/index.html) | Page shell, layout and styles. |
+| [`viewer/app.js`](viewer/app.js) | Graph engine: Barnes-Hut force layout, rendering, search, filters, bilingual panel. |
+| [`viewer/data.js`](viewer/data.js) | **Generated** bundle of all data (nodes, edges, referenced standards, clusters). |
+| [`scripts/build-graph-data.mjs`](scripts/build-graph-data.mjs) | Regenerates `viewer/data.js` from `data/`. |
+| [`scripts/serve-viewer.mjs`](scripts/serve-viewer.mjs) | Tiny zero-dependency static server. |
+
+> `viewer/data.js` is generated — edit `scripts/build-graph-data.mjs` and re-run it instead of hand-editing the bundle.
+
+**What you can do**
+
+- **Explore the graph** — nodes are topics (colored by subject, sized by centrality); edges are dependencies (solid = `hard`, dashed = `soft`). Pan, zoom, and watch the force layout settle.
+- **Search** — match against name, domain, subject or description; Enter jumps to the first hit.
+- **Filter** — toggle subjects and node types in the sidebar; the graph and edge counts update live.
+- **Inspect any topic** — click a node for its description, mastery evidence, assessment prompt, prerequisites / unlocks (clickable to walk the chain), aligned standards and cluster summary. Selecting a node also highlights its full ancestor chain in the graph.
+- **Bilingual panel** — subjects, types, all 54 domains and the 7 curricula ship with a built-in Chinese glossary; long-form text (title, description, evidence, assessment prompt, standards, cluster summary) is translated on demand and cached in `localStorage`. Toggle it in the header; with no network it silently falls back to English-only.
+- **Layout controls** — reset view, age layering (height encodes age, mirroring the 3D visualisation above), soft-edge visibility, force layout on/off, and drag-to-pin individual nodes.
 
 ## License
 
