@@ -100,6 +100,19 @@ Validate structure + referential integrity:
 node scripts/validate.mjs
 ```
 
+## Node graph viewer
+
+An interactive prerequisite graph over all 1,590 topics lives in [`viewer/`](viewer/) — a self-contained static page (vanilla JS + Canvas, zero runtime dependencies, works from `file://` too):
+
+```bash
+node scripts/build-graph-data.mjs   # bundle data/*.json -> viewer/data.js
+node scripts/serve-viewer.mjs       # serve at http://localhost:8123/
+```
+
+Then open <http://localhost:8123/>. Nodes are topics (colored by subject, sized by centrality); edges are dependencies (solid = `hard`, dashed = `soft`). Search, filter by subject/type, click any node for its description, mastery evidence, assessment prompt, prerequisites / unlocks, aligned standards and cluster summary. Double-click to focus, drag nodes to pin them, and toggle age layering to view the graph the way height encodes age.
+
+> `viewer/data.js` is generated — edit `scripts/build-graph-data.mjs` instead.
+
 ## License
 
 This dataset is **multi-licensed** — read this before you use or redistribute it.

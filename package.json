@@ -7,6 +7,8 @@
   "license": "(ODbL-1.0 AND CC-BY-SA-4.0)",
   "homepage": "https://withmarble.com",
   "scripts": {
-    "validate": "node scripts/validate.mjs"
+    "validate": "node scripts/validate.mjs",
+    "build:graph-data": "node scripts/build-graph-data.mjs",
+    "serve:viewer": "node scripts/serve-viewer.mjs"
   }
 }

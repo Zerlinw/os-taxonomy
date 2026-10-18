@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Marble Skill Taxonomy — 结点图</title>
+<style>
+  :root {
+    --bg: #0b1020;
+    --panel: rgba(15, 23, 42, 0.92);
+    --panel-solid: #0f172a;
+    --border: rgba(148, 163, 184, 0.16);
+    --text: #e2e8f0;
+    --muted: #8ea0b8;
+    --accent: #7dd3fc;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; overflow: hidden; }
+  body {
+    font-family: "Segoe UI", "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
+    background: var(--bg); color: var(--text);
+    display: flex; flex-direction: column;
+  }
+
+  /* ---------- header ---------- */
+  header {
+    display: flex; align-items: center; gap: 14px;
+    padding: 10px 16px; border-bottom: 1px solid var(--border);
+    background: var(--panel); backdrop-filter: blur(8px); z-index: 10;
+  }
+  .brand { font-size: 15px; font-weight: 700; letter-spacing: 0.2px; white-space: nowrap; }
+  .brand small { color: var(--muted); font-weight: 400; margin-left: 6px; }
+  #stat-meta { color: var(--muted); font-size: 12px; white-space: nowrap; }
+  .search-wrap { position: relative; margin-left: auto; }
+  #search {
+    width: 240px; padding: 7px 12px; border-radius: 8px;
+    border: 1px solid var(--border); background: rgba(2, 6, 23, 0.6);
+    color: var(--text); font-size: 13px; outline: none;
+  }
+  #search:focus { border-color: var(--accent); }
+  #search-results {
+    position: absolute; top: calc(100% + 6px); right: 0; width: 340px;
+    max-height: 60vh; overflow-y: auto; display: none;
+    background: var(--panel-solid); border: 1px solid var(--border);
+    border-radius: 10px; box-shadow: 0 12px 40px rgba(0,0,0,0.5); z-index: 50;
+  }
+  #search-results.open { display: block; }
+  .sr {
+    display: flex; align-items: center; gap: 8px; width: 100%;
+    padding: 8px 12px; background: none; border: none; color: var(--text);
+    font-size: 13px; cursor: pointer; text-align: left;
+  }
+  .sr:hover { background: rgba(125, 211, 252, 0.12); }
+  .sr-name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .sr-meta { color: var(--muted); font-size: 11px; white-space: nowrap; }
+  .sr-none { padding: 12px; color: var(--muted); font-size: 13px; }
+  .tools { display: flex; gap: 8px; }
+  .tbtn {
+    padding: 7px 12px; border-radius: 8px; font-size: 12px; cursor: pointer;
+    border: 1px solid var(--border); background: rgba(2, 6, 23, 0.6); color: var(--text);
+    white-space: nowrap;
+  }
+  .tbtn:hover { border-color: var(--accent); }
+  .tbtn.off { opacity: 0.45; }
+  .tbtn.on { border-color: var(--accent); color: var(--accent); }
+
+  /* ---------- layout ---------- */
+  main { flex: 1; display: flex; min-height: 0; position: relative; }
+  #graph { flex: 1; min-width: 0; cursor: grab; touch-action: none; }
+
+  /* ---------- sidebar ---------- */
+  aside {
+    width: 218px; flex: none; overflow-y: auto;
+    border-right: 1px solid var(--border); background: var(--panel);
+    padding: 12px; font-size: 13px;
+  }
+  .f-head {
+    display: flex; justify-content: space-between; align-items: baseline;
+    font-size: 11px; text-transform: uppercase; letter-spacing: 0.6px;
+    color: var(--muted); margin: 6px 0 8px;
+  }
+  .f-acts a { color: var(--accent); text-decoration: none; margin-left: 8px; font-size: 11px; }
+  .f-item {
+    display: flex; align-items: center; gap: 8px;
+    padding: 4px 6px; border-radius: 6px; cursor: pointer; user-select: none;
+  }
+  .f-item:hover { background: rgba(125, 211, 252, 0.08); }
+  .f-item input { accent-color: var(--accent); cursor: pointer; }
+  .f-name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .f-count { color: var(--muted); font-size: 11px; }
+  .sw { width: 10px; height: 10px; border-radius: 3px; flex: none; display: inline-block; }
+  #type-filters { margin-top: 14px; }
+  .legend { margin-top: 18px; padding-top: 12px; border-top: 1px solid var(--border); }
+  .legend .f-head { margin-bottom: 6px; }
+  .lg-row { display: flex; align-items: center; gap: 8px; margin: 5px 0; color: var(--muted); font-size: 12px; }
+  .lg-line { width: 26px; height: 0; border-top: 1.5px solid rgba(148,197,255,0.75); flex: none; }
+  .lg-line.dash { border-top-style: dashed; }
+  .hint { margin-top: 16px; color: var(--muted); font-size: 11px; line-height: 1.7; }
+
+  /* ---------- detail panel ---------- */
+  #detail {
+    position: absolute; top: 0; right: 0; bottom: 0; width: 380px;
+    background: var(--panel-solid); border-left: 1px solid var(--border);
+    transform: translateX(105%); transition: transform 0.25s ease;
+    display: flex; flex-direction: column; z-index: 20;
+  }
+  #detail.open { transform: translateX(0); }
+  .d-head {
+    display: flex; justify-content: space-between; gap: 10px;
+    padding: 16px 16px 10px; border-bottom: 1px solid var(--border);
+  }
+  .d-title { font-size: 17px; font-weight: 700; line-height: 1.3; }
+  .d-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+  .tag {
+    font-size: 11px; padding: 2px 8px; border-radius: 999px;
+    background: rgba(148, 163, 184, 0.15);
+    color: #cbd5e1; border: 1px solid rgba(148, 163, 184, 0.3);
+  }
+  .d-close {
+    background: none; border: none; color: var(--muted); font-size: 20px;
+    cursor: pointer; line-height: 1; padding: 0 4px; flex: none;
+  }
+  .d-close:hover { color: var(--text); }
+  .d-body { padding: 6px 16px 24px; overflow-y: auto; }
+  .d-body h4 {
+    font-size: 11px; text-transform: uppercase; letter-spacing: 0.6px;
+    color: var(--muted); margin: 18px 0 8px;
+  }
+  .d-body h4 .count { color: var(--accent); margin-left: 4px; }
+  .d-desc { font-size: 13.5px; line-height: 1.65; color: #cbd5e1; }
+  .evi { padding-left: 18px; font-size: 13px; line-height: 1.6; color: #cbd5e1; }
+  .evi li { margin: 4px 0; }
+  .assess { font-size: 13px; line-height: 1.6; color: #cbd5e1; font-style: italic; }
+  .zh { font-size: 12.5px; line-height: 1.6; color: #9fb2c8; margin-top: 4px; }
+  .zh:empty { display: none; }
+  .zh.pending::after { content: '翻译中…'; color: #64748b; font-size: 11px; }
+  .t-zh { font-size: 14px; font-weight: 600; color: var(--accent); margin-top: 1px; }
+  .evi .zh { margin: 1px 0 7px; font-size: 12px; }
+  .en-inline { opacity: 0.55; font-size: 10px; margin-left: 3px; font-weight: 400; }
+  .cluster {
+    font-size: 13px; line-height: 1.65; color: #cbd5e1;
+    background: rgba(125, 211, 252, 0.07); border-left: 2px solid var(--accent);
+    padding: 10px 12px; border-radius: 0 8px 8px 0;
+  }
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; }
+  .chip {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-size: 12px; padding: 4px 10px; border-radius: 999px; cursor: pointer;
+    border: 1px solid var(--border); background: rgba(2, 6, 23, 0.5); color: var(--text);
+    max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  .chip:hover { border-color: var(--accent); color: var(--accent); }
+  .dot { width: 6px; height: 6px; border-radius: 50%; flex: none; }
+  .dot.hard { background: #93c5fd; }
+  .dot.soft { background: #64748b; }
+  .muted { color: var(--muted); font-size: 12px; }
+  .stds { display: flex; flex-direction: column; gap: 8px; }
+  .std {
+    background: rgba(2, 6, 23, 0.5); border: 1px solid var(--border);
+    border-radius: 8px; padding: 8px 10px;
+  }
+  .std-code { font-size: 12px; font-weight: 700; color: var(--accent); margin-right: 8px; }
+  .std-cur { font-size: 11px; color: var(--muted); }
+  .std-title { font-size: 12.5px; margin-top: 4px; }
+  .std-desc { font-size: 12px; color: var(--muted); line-height: 1.5; margin-top: 2px; }
+
+  /* ---------- tooltip ---------- */
+  #tooltip {
+    position: fixed; display: none; pointer-events: none; z-index: 100;
+    background: rgba(2, 6, 23, 0.95); border: 1px solid var(--border);
+    border-radius: 8px; padding: 8px 10px; font-size: 12px; line-height: 1.5;
+    max-width: 280px; box-shadow: 0 8px 30px rgba(0,0,0,0.5);
+  }
+
+  /* ---------- status bar ---------- */
+  footer {
+    display: flex; align-items: center; gap: 16px;
+    padding: 6px 16px; border-top: 1px solid var(--border);
+    background: var(--panel); font-size: 11.5px; color: var(--muted); z-index: 10;
+  }
+  footer .grow { flex: 1; }
+
+  @media (max-width: 900px) {
+    aside { display: none; }
+    #detail { width: min(380px, 92vw); }
+    #stat-meta { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="brand">Marble Skill Taxonomy<small>结点图</small></div>
+  <div id="stat-meta"></div>
+  <div class="search-wrap">
+    <input id="search" type="text" placeholder="搜索主题 / 领域 / 描述…" autocomplete="off">
+    <div id="search-results"></div>
+  </div>
+  <div class="tools">
+    <button class="tbtn" id="btn-reset">重置视图</button>
+    <button class="tbtn" id="btn-age">年龄分层：关</button>
+    <button class="tbtn" id="btn-soft">软依赖：显示</button>
+    <button class="tbtn on" id="btn-zh">中文翻译：开</button>
+    <button class="tbtn" id="btn-physics">力导引：开</button>
+  </div>
+</header>
+
+<main>
+  <aside>
+    <div id="subject-filters"></div>
+    <div id="type-filters"></div>
+    <div class="legend">
+      <div class="f-head"><span>图例</span></div>
+      <div class="lg-row"><span class="lg-line"></span>硬依赖（必须先掌握）</div>
+      <div class="lg-row"><span class="lg-line dash"></span>软依赖（有助理解）</div>
+      <div class="lg-row"><span class="sw" style="background:#fff;border-radius:50%"></span>选中结点</div>
+    </div>
+    <div class="hint">
+      · 结点大小 ≈ 中心度<br>
+      · 单击结点查看详情与先修链<br>
+      · 双击结点聚焦并放大<br>
+      · 拖拽结点可手动布局<br>
+      · 中文翻译需联网，结果自动缓存<br>
+      · 滚轮缩放 · 拖空白处平移 · Esc 取消选中
+    </div>
+  </aside>
+
+  <canvas id="graph"></canvas>
+
+  <div id="detail"></div>
+</main>
+
+<footer>
+  <span id="status-counts"></span>
+  <span class="grow"></span>
+  <span>Marble Skill Taxonomy v1 · ODbL 1.0 / CC BY-SA 4.0 · withmarble.com</span>
+</footer>
+
+<div id="tooltip"></div>
+
+<script src="data.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
